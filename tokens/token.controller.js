@@ -20,7 +20,7 @@ function getAll(req, res, next) {
 function getByType(req, res, next) {
   console.log('getByType (token)')
   tokenService.getByType(req.params.userId, req.params.type)
-    .then(token => res.json(token[0]))
+    .then(token => res.json(token))
     .catch(err => next(err))
 }
 
