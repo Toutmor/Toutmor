@@ -8,7 +8,7 @@ module.exports = {
 
 async function getByTrigger(userId, trigger) {
   try {
-    return await Area.findOne({userId: userId, triggerName: trigger})
+    return await Area.find({userId: userId, triggerName: trigger})
   } catch (error) {
     throw error
   }

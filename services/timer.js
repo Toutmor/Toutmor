@@ -1,7 +1,7 @@
 const userService = require('../users/user.service')
 const tokenService = require('../tokens/token.service')
 const spotify = require('./spotify/spotify.service')
-const areaService = require('../area/area.service')
+const areaService = require('../areas/area.service')
 
 var actArray = {"play": spotify.play,
                 "pause": spotify.pause,
@@ -9,6 +9,8 @@ var actArray = {"play": spotify.play,
 
 function react_to(bool, who, user) {
     areaService.getByTrigger(user._id, who).then(array=>{
+        if (array == null)
+            return;
         array.forEach(Element =>{
             if (typeof(Element.prevState) === 'undefined')
                 Element.prevState = false;
