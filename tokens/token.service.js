@@ -28,11 +28,10 @@ async function getByType(userId, type) {
 async function create(tokenParams) {
   //const { userId, type, ...restTokenParams } = tokenParams.toObject()
   try {
-    if (await Token.findOne({userId: tokenParams.userId, type: tokenParams.type})) {
+    if (await Token.findOne({userId: tokenParams.userId, type: tokenParams.type, value: tokenParams.value})) {
         throw 'User already has a token of type: "' + tokenParams.type + '" stored'
     }
     const token = new Token(tokenParams)
-
     await token.save()
     return token
   } catch (error) {
