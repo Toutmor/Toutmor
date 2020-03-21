@@ -9,14 +9,14 @@ function react_to_spot(bool, who, user) {
         console.log(user.username+ ": "+ who + ': non');
 }
 function checks_spotify(user){
-    tokenService.getByType(user._id, 'spotify')
+    /*tokenService.getByType(user._id, 'spotify')
     .then(token => {
         if(!token)
             return;
         spotify.is_play(token.value, react_to_spot, user);
         spotify.is_device(token.value, react_to_spot, user);
         spotify.is_shuffle(token.value, react_to_spot, user);
-    }).catch(error => console.error(error));
+    }).catch(error => console.error(error));*/
 }
 
 function intervalFunc() {

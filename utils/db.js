@@ -17,5 +17,6 @@ mongoose.Promise = global.Promise
 
 module.exports = {
   User: require('../users/user.model'),
-  Token: require('../tokens/token.model')
+  Token: require('../tokens/token.model'),
+  Area: require('../areas/area.model')
 }

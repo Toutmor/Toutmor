@@ -41,7 +41,7 @@ async function create(tokenParams) {
 
 async function update(tokenParams) {
   try {
-    const token = await Token.findOne({userId: tokenParams.userId, type: tokenParams.type, value: tokenParams.value})
+    const token = await Token.findOne({userId: tokenParams.userId, type: tokenParams.type})
     if (token) {
       Object.assign(token, tokenParams)
       await token.save()
