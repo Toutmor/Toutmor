@@ -5,7 +5,7 @@ const tokenService = require('./token.service')
 router.get('/:userId', getAll)
 router.get('/:userId/:type', getByType)
 router.post('/create', create)
-router.put('/:tokenId', update)
+router.post('/update', update)
 router.delete('/:tokenId', _delete)
 
 module.exports = router
@@ -33,7 +33,7 @@ function create(req, res, next) {
 
 function update(req, res, next) {
   console.log('update (token)')
-  tokenService.update(req.params.tokenId)
+  tokenService.update(req.body)
     .then(() => res.json({}))
     .catch(err => next(err))
 }
