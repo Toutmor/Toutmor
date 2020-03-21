@@ -24,14 +24,21 @@ function react_to(bool, who, user) {
     }).catch(error => console.error(error));
 }
 function checks_spotify(user){
-    tokenService.getByType(user._id, 'spotify')
+    /*tokenService.getByType(user._id, 'spotify')
     .then(token => {
         if(!token)
             return;
+<<<<<<< HEAD
         spotify.is_play(token.value, react_to, user);
         spotify.is_device(token.value, react_to, user);
         spotify.is_shuffle(token.value, react_to, user);
     }).catch(error => console.error(error));
+=======
+        spotify.is_play(token.value, react_to_spot, user);
+        spotify.is_device(token.value, react_to_spot, user);
+        spotify.is_shuffle(token.value, react_to_spot, user);
+    }).catch(error => console.error(error));*/
+>>>>>>> aa5d675f7671a015d6b9ae66921f72fbaced99db
 }
 
 function intervalFunc() {

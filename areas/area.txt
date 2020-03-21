@@ -1,0 +1,5 @@
+model {
+  userId: ID du user,
+  actionName: nom de l'action, (ex: "shuffle")
+  reactionIndex: nom de la reaction (ex: "")
+}
