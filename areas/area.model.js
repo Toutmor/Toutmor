@@ -17,11 +17,11 @@ const areaModel = new Schema({
   prevState: {
     type: Boolean,
     default: true
-  }/*,
+  },
   type: {
     type: Number,
     default: 0
-  }*/
+  }
 })
 
 areaModel.set('toJSON', {virtuals:true})
