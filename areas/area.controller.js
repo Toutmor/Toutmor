@@ -3,8 +3,16 @@ const areaService = require('./area.service')
 
 router.post('/update', update)
 router.delete('/:areaId', _delete)
+router.get('/getAll/:userId', getAll)
 
 module.exports = router
+
+function getAll(req, res, next) {
+  console.log('getAll (area)')
+  areaService.getTest(req.params.userId)
+    .then(areas => res.json(areas))
+    .catch(error => next(error))
+}
 
 function update(req, res, next) {
   console.log('update (area)')

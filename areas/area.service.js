@@ -2,6 +2,8 @@ const Area = require('../utils/db').Area
 
 module.exports = {
   getAll,
+  getTest,
+  getByArray,
   update,
   delete: _delete
 }
@@ -9,6 +11,24 @@ module.exports = {
 async function getAll() {
   try {
     return await Area.find()
+  } catch (error) {
+    throw error
+  }
+}
+
+async function getTest(userId) {
+  try {
+    return await Area.find({userId: userId})
+  } catch (error) {
+    throw error
+  }
+}
+
+async function getByArray(triggerName, arrayValue) {
+  try {
+    console.log('=> ' + triggerName)
+    console.log('and ' + arrayValue)
+    return await Area.find({triggerName: triggerName, triggerParams: arrayValue})
   } catch (error) {
     throw error
   }
@@ -27,8 +47,8 @@ async function update(areaParams) {
     if (triggerArea) {
       console.log('updated trigger')
       Object.assign(triggerArea, areaParams)
-      await triggedArea.save()
-      return reactionArea
+      await triggerArea.save()
+      return triggerArea
     }
     console.log('created area')
     const newArea = new Area(areaParams)

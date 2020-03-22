@@ -17,11 +17,17 @@ const areaModel = new Schema({
   prevState: {
     type: Boolean,
     default: true
-  }/*,
+  },
   type: {
     type: Number,
     default: 0
-  }*/
+  },
+  tokenTarget: {
+    type: String,
+    required: true
+  },
+  actionParams: [],
+  triggerParams: []
 })
 
 areaModel.set('toJSON', {virtuals:true})
