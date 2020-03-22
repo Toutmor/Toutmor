@@ -17,8 +17,8 @@ function getUser(userId) {
     })
     .catch(error => console.error(error))
 }
-function play(userId) {
-  tokenService.getByType(userId, 'spotify')
+function play(area) {
+  tokenService.getByType(area.userId, 'spotify')
     .then(token => {
       var options = {
         url: 'https://api.spotify.com/v1/me/player/play',
@@ -34,8 +34,8 @@ function play(userId) {
       });
     }).catch(error => console.error(error))
 }
-function pause(userId) {
-  tokenService.getByType(userId, 'spotify')
+function pause(area) {
+  tokenService.getByType(area.userId, 'spotify')
     .then(token => {
       var options = {
         url: 'https://api.spotify.com/v1/me/player/pause',
@@ -51,8 +51,8 @@ function pause(userId) {
       });
     }).catch(error => console.error(error))
 }
-function skipnext(userId) {
-  tokenService.getByType(userId, 'spotify')
+function skipnext(area) {
+  tokenService.getByType(area.userId, 'spotify')
     .then(token => {
       var options = {
         url: 'https://api.spotify.com/v1/me/player/next',

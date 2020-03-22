@@ -1,23 +1,35 @@
 const tokenService = require('../../tokens/token.service')
+const areaService = require('../../areas/area.service')
 const { google } = require('googleapis');
 
 module.exports = {
   subscribe
 }
-function subscribe(userId) {
-    /*tokenService.getByType(userId, 'google').then(token=>{
+function subscribe(area) {
+    tokenService.getByType(userId, 'google').then(token=>{
       if (!token)
-        return;*/
+        return;
         authObj = new  google.auth.OAuth2();
         authObj.setCredentials({
-            access_token: 'ya29.a0Adw1xeWSME5zwQFCgLXhMSkyrW9oYIjzPPsIjtKjBvVBl46v58F-e-ekz28MjbcPhjzergfwWavhkLUF-WwKKFhx3sdPqQHvMityhUZ-efasTP1nPAooyGG1sHNJM5EQGm2ot0ek1F_CZgksQLUafKAl2zJgl1Uvap8'
+            access_token: 'ya29.a0Adw1xeWKeZEG0jTFlHbedz47vw3cgJHBaTPazfPYf3ay98rghfBPbNwSROdW5kBYdIAUdOgQW5yeXkl-0f4EIQndNhSoBBKLGCnD0hJvo4HdIDl31aigQbWSOLTT7z91U3xYj-zo7zbBnWjZfOnlWfp7xLPfmqwMyuo'
         });
         const gmail = google.gmail({
             version: 'v1',
             auth: authObj,
         });
+        gmail.users.getProfile({
+          auth: authObj,
+          userId: 'me'
+          }, function(err, res) {
+          if (err) {
+              console.log(err);
+          } else {
+              area.triggerParams.push(res.data.emailAddress);
+              areaService.update(area);
+          }
+      });
         gmail.users.watch({
-            userId: "lary.sacoche@gmail.com",
+            userId: "me",
             resource: {
               topicName: "projects/area-270123/topics/gmail",
             }
@@ -25,5 +37,5 @@ function subscribe(userId) {
             console.log("Error:", err);
             console.log("Watch reply:", result);
           })
-    //});
+    }).catch(error => console.error(error));
 }
