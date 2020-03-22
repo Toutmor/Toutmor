@@ -23,6 +23,9 @@ function sync(req, res, next) {
     calendarService.sync(req.params.userId, (values => {
       values.forEach((item, index) => {
         console.log('finally reason in value at index ' + index + ' : ' + item.reason)
+        console.log(item)
+        if (item.LastModifiedDateTime)
+          console.log('changed ?')
       })
     }))
 }
@@ -34,16 +37,20 @@ function subscribe(req, res, next) {
 
 function subscribeCallback(req, res, next) {
   console.log('subscribeCallback (calendar)')
+  res.status(200)
 }
 
 function subscribeCallbackTwo(req, res, next) {
   console.log('subscribeCallbackTwo (calendar)')
+  res.status(200)
 }
 
 function subscribeCallbackPost(req, res, next) {
   console.log('subscribeCallbackPost (calendar)')
+  res.status(200)
 }
 
 function subscribeCallbackTwoPost(req, res, next) {
   console.log('subscribeCallbackTwoPost (calendar)')
+  res.status(200)
 }

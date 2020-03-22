@@ -1,62 +1,89 @@
+const request = require('request-promise')
 const outlook = require('node-outlook')
 const tokenService = require('../../../tokens/token.service')
 
 
 module.exports = {
-  getAll,
-  sync
+  getAll
+  //sync
 }
 
-function getAll(userId) {
+function getAll(token, cb) {
   outlook.base.setApiEndpoint('https://outlook.office.com/api/v2.0')
-  tokenService.getByType(userId, 'outlook')
-    .then(token => {
-      const queryParams = {
-        '$select': 'Subject,ReceivedDateTime,From',
-        '$orderby': 'ReceivedDateTime desc',
-        '$top': 20
+
+  const queryParams = {
+      '$select': 'Subject,ReceivedDateTime,From',
+      '$filter': 'isRead eq false',
+      '$orderby': 'ReceivedDateTime desc',
+      '$top': 20
+    }
+    outlook.mail.getMessages({token: token.value, odataParams: queryParams, folderId: 'Inbox'}, function(error, result) {
+      if (error) {
+        return;
       }
-      outlook.mail.getMessages({token: token[0].value, odataParams: queryParams}, function(error, result) {
-        if (error) {
-          throw error
+      else if (result) {
+        if (result.value.length === 0) {
+          cb(false, )
         }
-        else if (result) {
-          console.log('getMessages returned ' + result.value.length + ' messages.');
-          result.value.forEach(function(message) {
-            console.log('  Subject:', message.Subject);
-            console.log('  Received:', message.ReceivedDateTime.toString());
-            console.log('  From:', message.From ? message.From.EmailAddress.Name : 'EMPTY');
-          });
+        else {
+          tokenService.getByType(userId, 'unread-mail-number')
+            .then(token => {
+              if (token && result.value.length > token.value) {
+                tokenService.update({userId: userId, type: 'unread-mail-number', value: result.value.length})
+                cb(undefined, true)
+              }
+              else if (!token) {
+                  tokenService.update({userId: userId, type: 'unread-mail-number', value: result.value.length})
+                  cb(undefined, true)
+              }
+            })
+            .catch(error => cb(error, undefined))
         }
-      })
+      }
     })
-    .catch(error => console.error(error))
 }
 
-function sync(userId, cb) {
-  console.log('??')
-  outlook.base.setApiEndpoint('https://outlook.office.com/api/v2.0')
-  console.log('!!')
+/*function sync(userId, cb) {
+  outlook.base.setApiEndpoint('https://outlook.office.com/api/beta')
   tokenService.getByType(userId, 'outlook')
     .then(outlookToken => {
+      if (!outlookToken) {
+        cb("syncError: No outlook token", undefined)
+      }
       tokenService.getByType(userId, 'mail-deltatoken')
         .then(deltaToken => {
-          if (!deltaToken[0]) {
-            firstSync(outlookToken, function(deltaLink) {
-              console.log('in callback: deltaLink: ' + deltaLink)
-              const deltaTokenParams = {
-                userId: userId,
-                type: 'mail-deltatoken',
-                value: deltaLink
+          if (!deltaToken) {
+            console.log('first sync inc')
+            firstSync(outlookToken, (firstDeltaValue) => {
+              if (firstDeltaValue === 'no deltaLink') {
+                cb("unknown error: firstsync: " + firstDeltaValue, undefined)
               }
-              tokenService.create(deltaTokenParams)
-                .then(createdDeltaToken => {
-                  otherSync(outlookToken[0], createdDeltaToken, function(newValue, values) {
-                    tokenService.update(createdDeltaToken._id, {value: newValue})
-                    cb(undefined, values)
+              else {
+                tokenService.update({userId: userId, type: 'mail-deltatoken', value: firstDeltaValue})
+                  .then(updatedDeltaToken => {
+                    otherSync(outlookToken, updatedDeltaToken, (newValue, value) => {
+                      if (newValue === 'no deltaLink') {
+                        cb("Unknown error: sync right after firstsync: " + newValue, undefined)
+                      }
+                      else {
+                        tokenService.update({userId: userId, type: 'mail-deltatoken', value: newValue})
+                        cb(undefined, values)
+                      }
+                    })
                   })
-                })
-                .catch(error => cb(error, undefined))
+                  .catch(error => cb(error, undefined))
+              }
+            })
+          }
+          else {
+            otherSync(outlookToken, deltaToken, (newValue, value) => {
+              if (newValue === 'no deltaLink') {
+                cb('Unknown error: othersync: ' + newValue, undefined)
+              }
+              else {
+                tokenService.update({userId: userId, type: 'mail-deltatoken', value: newValue})
+                cb(undefined, values)
+              }
             })
           }
         })
@@ -66,52 +93,103 @@ function sync(userId, cb) {
 }
 
 function firstSync(outlookToken, cb) {
-  const queryParams = {
-    '$select': 'Subject,ReceivedDateTime,From,BodyPreview,IsRead',
-    '$orderby': 'ReceivedDateTime desc'
-  }
-  const apiOptions = {
-    token: outlookToken[0].value,
-    odataParams: queryParams
-  }
-  outlook.mail.syncMessages(apiOptions, function(error, messages) {
-    if (error)
-      throw error
-    console.log('firstSync: ' + JSON.stringify(messages))
-    const nextLink = messages["@odata.nextLink"]
-    if (nextLink !== undefined && nextLink.includes())
-      console.log('ON EST LA')
-    const deltaLink = messages["@odata.deltaLink"]
-    if (deltaLink !== undefined && deltaLink.includes('deltatoken')) {
-      console.log('firstsync deltatoken found')
-      cb(deltaLink.substring(deltaLink.lastIndexOf("=") + 1))
-    } else {
-      cb('no deltalink')
+    const syncMsgParams = {
+      '$select': 'Subject',
+      '$orderby': 'ReceivedDateTime desc'
     }
-  })
+    const apiOptions = {
+      token: outlookToken.value,
+      folderId: 'Inbox',
+      odataParams: syncMsgParams,
+      pageSize: 30
+    }
+    outlook.mail.syncMessages(apiOptions, (error, messages) => {
+      if (error) {
+        console.error(error)
+      }
+      else {
+        const deltaLink = messages["@odata.deltaLink"]
+        if (deltaLink.includes('deltatoken')) {
+          console.log('firstSync found a deltaToken...')
+          cb(deltaLink.substring(deltaLink.lastIndexOf("=") + 1))
+        }
+        else {
+          cb('no deltaLink')
+        }
+      }
+    })
 }
 
 function otherSync(outlookToken, deltaToken, cb) {
-  const queryParams = {
-    '$select': 'Subject,ReceivedDateTime,From,BodyPreview,IsRead',
+  const syncMsgParams = {
+    '$select': 'Subject',
     '$orderby': 'ReceivedDateTime desc'
   }
   const apiOptions = {
     token: outlookToken.value,
-    odataParams: queryParams,
     deltaToken: deltaToken.value,
-    pageSize: 20
+    folderId: 'Inbox',
+    odataParams: syncMsgParams,
+    pageSize: 30
   }
-  outlook.mail.syncMessages(apiOptions, function(error, messages) {
-    if (error)
-      throw error
-    console.log('otherSync: ' + JSON.stringify(messages))
-    const values = messages['value']
-    const deltaLink = messages["@odata.deltaLink"]
-    if (deltaLink !== undefined && deltaLink.includes('deltatoken') && deltaLink.includes('deltatoken')) {
-      cb(deltaLink.substring(deltaLink.lastIndexOf("=") + 1), values)
-    } else {
-      cb('no deltalink', values)
+  outlook.mail.syncMessages(apiOptions, (error, messages) => {
+    if (error) {
+      console.error(error)
+    }
+    else {
+      const values = messages['value']
+      const deltaLink = messages["@odata.deltaLink"]
+      const nextLink = messages["@odata.nextLink"]
+      console.log(JSON.stringify(messages))
+      if (deltaLink && (deltaLink.includes('deltatoken') || deltaLink.includes('deltaToken'))) {
+        console.log('otherSync found a deltaToken')
+        cb(deltaLink.substring(deltaLink.lastIndexOf("=") + 1), values)
+      }
+      else if (nextLink && (nextLink.includes('skipToken') || nextLink.includes('skiptoken'))) {
+        console.log('otherSync found a skipToken')
+        console.log('=>' + nextLink.substring(nextLink.lastIndexOf("=") + 1))
+        skipSync(outlookToken, nextLink.substring(nextLink.lastIndexOf("=") + 1), cb)
+      }
+      else {
+        cb('no deltaLink', values)
+      }
     }
   })
 }
+
+function skipSync(outlookToken, skipTokenValue, cb) {
+  const syncMsgParams = {
+    '$select': 'Subject',
+    '$orderby': 'ReceivedDateTime desc'
+  }
+  const apiOptions = {
+    token: outlookToken.value,
+    skipToken: skipTokenValue,
+    folderId: 'Inbox',
+    odataParams: syncMsgParams,
+    pageSize: 30
+  }
+  outlook.mail.syncMessages(apiOptions, (error, messages) => {
+    if (error) {
+      console.error(error)
+    }
+    else {
+      const values = messages['value']
+      const deltaLink = messages["@odata.deltaLink"]
+      const nextLink = messages["@odata.nextLink"]
+      console.log(JSON.stringify(messages))
+      if (deltaLink && (deltaLink.includes('deltatoken') || deltaLink.includes('deltaToken'))) {
+        console.log('otherSync found a deltaToken')
+        cb(deltaLink.substring(deltaLink.lastIndexOf("=") + 1), values)
+      }
+      else if (nextLink && (nextLink.includes('skipToken') || nextLink.includes('skiptoken'))) {
+        console.log('otherSync found a skipToken')
+        console.log(nextLink.substring(deltaLink.lastIndexOf("=") + 1))
+        skipSync(outlookToken, nextLink.substring(deltaLink.lastIndexOf("=") + 1))
+      }
+      else {
+        cb('no deltaLink', values)
+      }
+    }
+  })
+}*/

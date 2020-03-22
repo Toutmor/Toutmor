@@ -24,11 +24,6 @@ function react_to(bool, area) {
 }
 
 function intervalFunc() {
-    /*userService.getAll().then(Element=> {
-        Element.forEach(user =>{
-            console.log(user._id +": "+user.username);
-        });
-    }).catch(error => console.error(error));*/
     areaService.getAll().then(area =>{
         area.forEach(Element => {
             /*if (Element.type)
