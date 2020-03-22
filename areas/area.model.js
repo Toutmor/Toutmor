@@ -15,8 +15,13 @@ const areaModel = new Schema({
     required: true
   },
   prevState: {
-    type: Boolean
-  }
+    type: Boolean,
+    default: true
+  }/*,
+  type: {
+    type: Number,
+    default: 0
+  }*/
 })
 
 areaModel.set('toJSON', {virtuals:true})

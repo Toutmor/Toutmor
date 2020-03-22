@@ -80,7 +80,7 @@ function is_play(token, callback, user) {
       if (error || !response.body)
         return;
       var res = JSON.parse(response.body);
-      callback(res.is_playing, "play", user);
+      callback(res.is_playing, user);
     });
 }
 
@@ -95,7 +95,7 @@ function is_shuffle(token, callback, user) {
       if (error|| !response.body)
         return;
       var shuffle= JSON.parse(response.body).shuffle_state;
-      callback(shuffle, "shuffle", user);
+      callback(shuffle, user);
     });
 }
 function is_device(token, callback, user) {
@@ -110,8 +110,8 @@ function is_device(token, callback, user) {
         return;
         var device= JSON.parse(response.body)
       if (device.hasOwnProperty('devices') && device.devices.length > 0)
-          callback(true, "device", user);
+          callback(true, user);
       else
-          callback(false, "device", user);
+          callback(false, user);
     });
 }

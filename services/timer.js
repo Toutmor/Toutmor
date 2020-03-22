@@ -1,47 +1,45 @@
 const userService = require('../users/user.service')
 const tokenService = require('../tokens/token.service')
 const spotify = require('./spotify/spotify.service')
+const gmail = require('./gmail/gmail.service')
 const areaService = require('../areas/area.service')
 
 var actArray = {"play": spotify.play,
                 "pause": spotify.pause,
                 "next": spotify.skipnext};
+var triggerArray = {"play": spotify.is_play,
+                    "shuffle": spotify.is_shuffle,
+                    "device": spotify.is_device,
+                    "incgmail": gmail.subscribe};
 
-function react_to(bool, who, user) {
-    areaService.getByTrigger(user._id, who).then(array=>{
-        if (array == null)
-            return;
-        array.forEach(Element =>{
-            if (typeof(Element.prevState) === 'undefined')
-                Element.prevState = false;
-            if (bool && !Element.prevState) {
-                actArray[Element.actionName](user._id);
-                Element.prevState = true;
-            } else if (!bool && Element.prevState)
-                Element.prevState = false;
-            else
-                return;
-            areaService.update(Element);
-        });
-    }).catch(error => console.error(error));
-}
-function checks_spotify(user){
-    tokenService.getByType(user._id, 'spotify')
-    .then(token => {
-        if(!token)
-            return;
-        spotify.is_play(token.value, react_to, user);
-        spotify.is_device(token.value, react_to, user);
-        spotify.is_shuffle(token.value, react_to, user);
-    }).catch(error => console.error(error));
+function react_to(bool, area) {
+    if (bool && !area.prevState) {
+        actArray[area.actionName](area.userId);
+        area.prevState = true;
+    } else if (!bool && area.prevState)
+        area.prevState = false;
+    else
+        return;
+    areaService.update(area);
 }
 
 function intervalFunc() {
-    userService.getAll().then(user =>{
-        user.forEach(Element => {
-            checks_spotify(Element);
+    /*userService.getAll().then(Element=> {
+        Element.forEach(user =>{
+            console.log(user._id +": "+user.username);
         });
-    });
+    }).catch(error => console.error(error));*/
+    areaService.getAll().then(area =>{
+        area.forEach(Element => {
+            /*if (Element.type)
+                Element.type === 1 ? triggerArray[Element.triggerName](Element.userId) : 0;
+            else*/
+                tokenService.getByType(Element.userId, 'spotify').then(token => {
+                    if (token)
+                        triggerArray[Element.triggerName](token.value, react_to, Element);
+                }).catch(error => console.error(error));;
+        });
+    }).catch(error => console.error(error));
 }
 
 setInterval(intervalFunc, 1500);

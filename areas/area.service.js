@@ -1,14 +1,14 @@
 const Area = require('../utils/db').Area
 
 module.exports = {
-  getByTrigger,
+  getAll,
   update,
   delete: _delete
 }
 
-async function getByTrigger(userId, trigger) {
+async function getAll() {
   try {
-    return await Area.find({userId: userId, triggerName: trigger})
+    return await Area.find()
   } catch (error) {
     throw error
   }
