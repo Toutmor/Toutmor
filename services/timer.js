@@ -36,12 +36,18 @@ function checks_spotify(user){
     }).catch(error => console.error(error));
 }
 
+function check_outlook(user) {
+}
+
 function intervalFunc() {
     userService.getAll().then(user =>{
         user.forEach(Element => {
-            checks_spotify(Element);
+            if (Element.username === 'jeremy') {
+              checks_spotify(Element);
+              console.log('checked for ' + Element.username)
+            }
         });
     });
 }
 
-setInterval(intervalFunc, 1500);
+//setInterval(intervalFunc, 1500);

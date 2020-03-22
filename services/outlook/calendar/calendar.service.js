@@ -46,22 +46,20 @@ function sync(userId, cb) {
         throw "No outlook token"
       }
       console.log('here')
-      tokenService.getByType(userId, 'deltatoken')
+      tokenService.getByType(userId, 'calendar-deltatoken')
         .then(deltaToken => {
           if (!deltaToken) {
             console.log('and here')
             firstSync(outlookToken, function(ret) {
-              console.log('ret is ' + ret)
-              const deltaTokenParams = {
-                userId: userId,
-                type: "deltatoken",
-                value: ret
+              if (ret === 'no deltaLink') {
+                throw "Unknown error: firstsync: " + ret
               }
-              tokenService.create(deltaTokenParams)
+              console.log('ret is ' + ret)
+              tokenService.update({userId: userId, type: 'calendar-deltatoken', value: ret})
                 .then(updatedDeltaToken => {
                   otherSync(outlookToken, updatedDeltaToken, function(newValue, values) {
                     console.log('new ret is: ' + newValue)
-                    tokenService.update(updatedDeltaToken._id, {value: newValue})
+                    tokenService.update({userId: userId, type: 'calendar-deltatoken', value: newValue})
                     cb(values)
                   })
                 })
@@ -71,7 +69,7 @@ function sync(userId, cb) {
           else {
             otherSync(outlookToken, deltaToken, function(newValue, values) {
               console.log('newValue is: ' + newValue)
-              tokenService.update(deltaToken._id, {value: newValue})
+              tokenService.update({userId: userId, type: 'calendar-deltatoken', value: newValue})
               cb(values)
             })
           }
