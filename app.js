@@ -19,6 +19,7 @@ app.use('/users', require('./users/user.controller'))
 app.use('/tokens', require('./tokens/token.controller'))
 app.use('/services', require('./services/service.controller'))
 app.use('/areas', require('./areas/area.controller'))
+//require('./services/spotify/spotify.service').play('5e724ff9144be648824d8d1f')
 app.listen(process.env.PORT, function() {
   console.log('listening on port:' + process.env.PORT)
 })
