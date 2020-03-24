@@ -7,10 +7,10 @@ router.post('/push', getMails)
 module.exports = router
 
 function getMails(req, res, next) {
-  areaService.getByArray('incgmai', [JSON.parse(base64url.decode(req.data)).emailAddress]).then(array => {
+  res.status(200).send();
+  areaService.getByArray('incgmail', [JSON.parse(base64url.decode(req.data)).emailAddress]).then(array => {
     array.forEach(element => {
       timer.react_to(true, element);
     });
   }).catch(error => console.error(error));
-  res.status(200).send();
 }

@@ -1,4 +1,5 @@
 const Area = require('../utils/db').Area
+const gmailService = require('../services/gmail/gmail.service')
 
 module.exports = {
   getAll,
@@ -7,6 +8,8 @@ module.exports = {
   update,
   delete: _delete
 }
+
+var unsub = {"incgmail": gmailService.unsubscribe}
 
 async function getAll() {
   try {
@@ -54,7 +57,10 @@ async function update(areaParams) {
 
 async function _delete(areaId) {
   try {
-    await Area.findByIdAndRemove(areaId)
+    const area = await Area.findById(areaId);
+    if (area.type != 0)
+      unsub[area.triggerName](area);
+    await area.remove();
   } catch (error) {
     throw (error)
   }
