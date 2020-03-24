@@ -36,25 +36,17 @@ async function getByArray(triggerName, arrayValue) {
 
 async function update(areaParams) {
   try {
-    const actionArea = await Area.findOne({userId: areaParams.userId, actionName: areaParams.actionName})
-    if (actionArea) {
-      console.log('updated action')
-      Object.assign(actionArea, areaParams)
-      await actionArea.save()
-      return actionArea
+    if (areaParams._id) {
+      const area = await Area.findOne({_id: areaParams._id})
+      Object.assign(area, areaParams)
+      await area.save()
+      console.log('=> updated')
+      return area
     }
-    const triggerArea = await Area.findOne({userId: areaParams.userId, triggerName: areaParams.triggerName})
-    if (triggerArea) {
-      console.log('updated trigger')
-      Object.assign(triggerArea, areaParams)
-      await triggerArea.save()
-      return triggerArea
-    }
-    console.log('created area')
-    const newArea = new Area(areaParams)
-    await newArea.save()
-    return newArea
-
+    const area = new Area(areaParams)
+    await area.save()
+    console.log('=> created')
+    return area
   } catch (error) {
     throw (error)
   }

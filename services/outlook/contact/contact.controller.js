@@ -1,55 +1,26 @@
 const router = require('express').Router()
-const calendarService = require('./calendar.service')
-const areaService = require('../../../areas/area.service')
 const timer = require('../../timer')
+const areaService = require('../../../areas/area.service')
 
-router.get('/:userId', getAll)
-router.get('/sync/:userId', sync)
-router.get('/subscribe/:userId', subscribe)
-router.post('/callback/calendarCreate', subscribeCallbackCreate)
-router.post('/callback/calendarDelete', subscribeCallbackDelete)
-router.post('/callback/calendarUpdate', subscribeCallbackUpdate)
-router.post('/callback/me', uselessFunction)
+router.post('/callback/mailCreate', subscribeCallbackCreate)
+router.post('/callback/mailDelete', subscribeCallbackDelete)
+router.post('/callback/mailUpdate', subscribeCallbackUpdate)
 
 module.exports = router
 
-function getAll(req, res, next) {
-  console.log('getAll (calendar)')
-  calendarService.getAll(req.params.userId)
-}
-
-function sync(req, res, next) {
-  console.log('sync (calendar)')
-
-    calendarService.sync(req.params.userId, (values => {
-      values.forEach((item, index) => {
-        console.log('finally reason in value at index ' + index + ' : ' + item.reason)
-        console.log(item)
-        if (item.LastModifiedDateTime)
-          console.log('changed ?')
-      })
-    }))
-}
-
-function subscribe(req, res, next) {
-  console.log('subscribe (calendar)')
-  calendarService.subscribe(req.params.userId)
-}
-
 function subscribeCallbackCreate(req, res, next) {
-  console.log('subscribeCallbackCreate (calendar)')
+  console.log('subscribeCallbackCreate (contatcs)')
   if (req.query.validationtoken) {
     console.log('send: validationtoken')
     res.status(200).send(req.query.validationtoken)
     return
   }
   console.log('send: ok')
-  //res.status(202).send(http.STATUS_CODES[202])
   res.status(200).send()
   if (req.body && req.body.value) {
     const id = req.body.value[0].SubscriptionId
     console.log("deeper: " + id)
-    areaService.getByArray('calendarCreate', [id])
+    areaService.getByArray('contactCreate', [id])
       .then(area => {
         if (!area) {
           console.error('area not found')
@@ -64,19 +35,18 @@ function subscribeCallbackCreate(req, res, next) {
 }
 
 function subscribeCallbackDelete(req, res, next) {
-  console.log('subscribeCallbackDelete (calendar)')
+  console.log('subscribeCallbackDelete (contatcs)')
   if (req.query.validationtoken) {
     console.log('send: validationtoken')
     res.status(200).send(req.query.validationtoken)
     return
   }
   console.log('send: ok')
-  //res.status(202).send(http.STATUS_CODES[202])
   res.status(200).send()
   if (req.body && req.body.value) {
     const id = req.body.value[0].SubscriptionId
     console.log("deeper: " + id)
-    areaService.getByArray('calendarDelete', [id])
+    areaService.getByArray('contactDelete', [id])
       .then(area => {
         if (!area) {
           console.error('area not found')
@@ -91,19 +61,18 @@ function subscribeCallbackDelete(req, res, next) {
 }
 
 function subscribeCallbackUpdate(req, res, next) {
-  console.log('subscribeCallbackUpdate (calendar)')
+  console.log('subscribeCallbackUpdate (contatcs)')
   if (req.query.validationtoken) {
     console.log('send: validationtoken')
     res.status(200).send(req.query.validationtoken)
     return
   }
   console.log('send: ok')
-  //res.status(202).send(http.STATUS_CODES[202])
   res.status(200).send()
   if (req.body && req.body.value) {
     const id = req.body.value[0].SubscriptionId
     console.log("deeper: " + id)
-    areaService.getByArray('calendarUpdate', [id])
+    areaService.getByArray('contactUpdate', [id])
       .then(area => {
         if (!area) {
           console.error('area not found')
@@ -115,9 +84,4 @@ function subscribeCallbackUpdate(req, res, next) {
       })
       .catch(error => console.error(error.message))
   }
-}
-
-function uselessFunction(req, res, next) {
-  console.log('uselessFunction called')
-  res.status(200).send()
 }

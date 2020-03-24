@@ -10,7 +10,17 @@ function jwt() {
             // public routes that don't require authentication
             '/users/authenticate',
             '/users/register',
-            '/services/gmail/push'
+            '/services/gmail/push',
+            '/services/outlook/calendar/callback/calendarCreate',
+            '/services/outlook/calendar/callback/calendarDelete',
+            '/services/outlook/calendar/callback/calendarUpdate',
+            '/services/outlook/mail/callback/mailCreate',
+            '/services/outlook/mail/callback/mailDelete',
+            '/services/outlook/mail/callback/mailUpdate',
+            '/services/outlook/contact/callback/contactCreate',
+            '/services/outlook/contact/callback/contactDelete',
+            '/services/outlook/contact/callback/contactUpdate',
+            '/services/outlook/calendar/callback/me'
         ]
     });
 }

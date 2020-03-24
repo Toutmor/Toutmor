@@ -6,7 +6,7 @@ module.exports = {
   subscribe
 }
 function subscribe(area) {
-    tokenService.getByType(userId, 'google').then(token=>{
+    tokenService.getByType(area.userId, 'google').then(token=>{
       if (!token)
         return;
         authObj = new  google.auth.OAuth2();

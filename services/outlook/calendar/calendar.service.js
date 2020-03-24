@@ -1,16 +1,15 @@
 const outlook = require('node-outlook')
 const request = require('request-promise')
-
-
 const moment = require('moment')
 const tokenService = require('../../../tokens/token.service')
+const areaService = require('../../../areas/area.service')
 
 outlook.base.setApiEndpoint('https://outlook.office.com/api/v2.0')
 
 module.exports = {
   getAll,
-  sync,
-  subscribe
+  subscribe,
+  create
 }
 
 function getAll(userId) {
@@ -39,110 +38,20 @@ function getAll(userId) {
   .catch (error => console.error(error))
 }
 
-function sync(userId, cb) {
-  tokenService.getByType(userId, 'outlook')
-    .then(outlookToken => {
-      if (!outlookToken) {
-        throw "No outlook token"
-      }
-      console.log('here')
-      tokenService.getByType(userId, 'calendar-deltatoken')
-        .then(deltaToken => {
-          if (!deltaToken) {
-            console.log('and here')
-            firstSync(outlookToken, function(ret) {
-              if (ret === 'no deltaLink') {
-                throw "Unknown error: firstsync: " + ret
-              }
-              console.log('ret is ' + ret)
-              tokenService.update({userId: userId, type: 'calendar-deltatoken', value: ret})
-                .then(updatedDeltaToken => {
-                  otherSync(outlookToken, updatedDeltaToken, function(newValue, values) {
-                    console.log('new ret is: ' + newValue)
-                    tokenService.update({userId: userId, type: 'calendar-deltatoken', value: newValue})
-                    cb(values)
-                  })
-                })
-                .catch(error => console.error(error))
-            })
-          }
-          else {
-            otherSync(outlookToken, deltaToken, function(newValue, values) {
-              console.log('newValue is: ' + newValue)
-              tokenService.update({userId: userId, type: 'calendar-deltatoken', value: newValue})
-              cb(values)
-            })
-          }
-        })
-        .catch(error => console.error('error 1:' + error))
-    })
-    .catch(error => console.error('error 2:' + error))
-}
-
-function firstSync(outlookToken, cb) {
-  console.log('???')
-  const startDateTime = moment().format('YYYY-MM-DD')
-  const endDateTime = moment().add(7, 'd').format('YYYY-MM-DD')
-  const apiOptions = {
-    token: outlookToken.value,
-    startDateTime: startDateTime,
-    endDateTime: endDateTime
-  }
-
-  outlook.calendar.syncEvents(apiOptions, function(error, events) {
-    if (error) {
-      console.log('this throw')
-      throw error
-    }
-    console.log('other test: ' + JSON.stringify(events))
-    const deltaLink = events["@odata.deltaLink"]
-    console.log('deltaLink: ' + deltaLink)
-    if (deltaLink.includes('deltatoken')) {
-      console.log('next step')
-      cb(deltaLink.substring(deltaLink.lastIndexOf("=") + 1))
-    }
-    else {
-      cb('no deltalink')
-    }
-  })
-}
-
-function otherSync(outlookToken, deltaToken, cb) {
-  const startDateTime = moment().format('YYYY-MM-DD')
-  const endDateTime = moment().add(7, 'd').format('YYYY-MM-DD')
-  const apiOptions = {
-    token: outlookToken.value,
-    deltaToken: deltaToken.value,
-    startDateTime: startDateTime,
-    endDateTime: endDateTime
-  }
-  outlook.calendar.syncEvents(apiOptions, function(error, events) {
-    if (error) {
-      console.log('this throw')
-      throw error
-    }
-    console.log('other sync other test: ' + JSON.stringify(events))
-    const deltaLink = events["@odata.deltaLink"]
-    console.log('deltaLink: ' + deltaLink)
-    const values = events['value']
-    if (deltaLink.includes('deltatoken') || deltaLink.includes('deltaToken')) {
-      console.log('next step')
-      const newValue = deltaLink.substring(deltaLink.lastIndexOf("=") + 1)
-      cb(newValue, values)
-    }
-    else {
-      console.log('no deltalink')
-      cb('no deltalink', values)
-    }
-  })
-}
-
-function subscribe(userId) {
-  tokenService.getByType(userId, 'outlook')
+function subscribe(area) {
+  tokenService.getByType(area.userId, 'outlook')
     .then(token => {
       if (!token) {
         throw "No outlook token found"
       }
+      var changeType
+      if (area.triggerName.includes("Create"))
+        changeType = "Created"
+      else if (area.triggerName.includes("Delete"))
+        changeType = "Deleted"
+      else if (area.triggerName.includes("Update"))
+        changeType = "Updated"
+      console.log('==> changeType: ' + changeType)
       console.log('token value: ' + token.value)
       const rqOptions = {
         uri: 'https://outlook.office.com/api/v2.0/me/subscriptions',
@@ -153,14 +62,19 @@ function subscribe(userId) {
         body : {
           "@odata.type":"#Microsoft.OutlookServices.PushSubscription",
           "Resource": "https://outlook.office.com/api/v2.0/me/events",
-          "NotificationURL": "https://obscure-springs-42273.herokuapp.com/services/outlook/calendar/callback/me",
-          "ChangeType": "Created"
+          "NotificationURL": "https://obscure-springs-42273.herokuapp.com/services/outlook/calendar/callback/" + area.triggerName,
+          "ChangeType": changeType
         },
         json: true
       }
       request(rqOptions)
         .then((parsedBody) => {
           console.log('parsedBody:' + parsedBody + '\nparsedBody over')
+          console.log(JSON.stringify(parsedBody))
+          console.log(parsedBody.Id)
+          area.triggerParams.push(parsedBody.Id)
+          area.type = 2
+          areaService.update(area)
         })
         .catch((err) => {
           console.log('err 1: ' + err + 'err 1 over')
@@ -171,4 +85,35 @@ function subscribe(userId) {
     .catch((err) => {
       console.log('err 2: ' + err + 'err 2 over')
     })
+}
+
+function create(area) {
+  console.log('create (calendar)')
+  tokenService.getByType(area.userId, 'outlook')
+    .then(token => {
+      outlook.base.setApiEndpoint('https://outlook.office.com/api/v2.0')
+      const newEvent = {
+        Subject: area.actionParams[0],
+        Body: {
+          ContentType: 'Text',
+          Content: 'This is an event created by trigger "' + area.triggerName + '"'
+        },
+        Start: {
+          DateTime: area.actionParams[1],
+          TimeZone: "Eastern Standard Time"
+        },
+        End: {
+          DateTime: area.actionParams[2],
+          TimeZone: "Eastern Standard Time"
+        }
+      }
+      outlook.calendar.createEvent({token: token.value, event: newEvent}, function(error, result) {
+        if (error) {
+          console.error(error.message)
+        } else {
+          console.log(JSON.stringify(result))
+        }
+      })
+    })
+    .catch(error => console.error(error))
 }

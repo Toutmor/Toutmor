@@ -18,6 +18,7 @@
     "express": "^4.17.1",
     "express-jwt": "^5.3.1",
     "googleapis": "^39.2.0",
+    "http": "0.0.0",
     "moment": "^2.24.0",
     "mongoose": "^5.9.5",
     "node-outlook": "^1.1.8",

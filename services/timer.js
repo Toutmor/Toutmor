@@ -3,26 +3,33 @@ const tokenService = require('../tokens/token.service')
 const spotify = require('./spotify/spotify.service')
 const gmail = require('./gmail/gmail.service')
 const areaService = require('../areas/area.service')
-const outlook = require('./outlook/outlook.service')
+const outlookCalendar = require('./outlook/calendar/calendar.service')
+const outlookMail = require('./outlook/mail/mail.service')
+const outlookContact = require('./outlook/contact/contact.service')
 
 module.exports = {react_to};
 
 var actArray = {"play": spotify.play,
                 "pause": spotify.pause,
                 "next": spotify.skipnext,
-                "sendOutlook": outlook.send};
+                "sendOutlook": outlookMail.send,
+                "createOutlook": outlookCalendar.create,
+                "createContactOutlook": outlookContact.create
+              };
 var triggerArray = {"play": spotify.is_play,
                     "shuffle": spotify.is_shuffle,
                     "device": spotify.is_device,
                     "incgmail": gmail.subscribe,
-                    "unreadOutlook": outlook.getAllUnread};
-function check_spotify(Element) {
-    tokenService.getByType(Element.userId, 'spotify').then(token => {
-        if (token)
-        console.log(Element.triggerName);
-            triggerArray[Element.triggerName](token.value, react_to, Element);
-    }).catch(error => console.error(error));
-}
+                    "calendarCreate": outlookCalendar.subscribe,
+                    "calendarDelete": outlookCalendar.subscribe,
+                    "calendarUpdate": outlookCalendar.subscribe,
+                    "mailCreate": outlookMail.subscribe,
+                    "mailDelete": outlookMail.subscribe,
+                    "mailUpdate": outlookMail.subscribe,
+                    "contactCreate": outlookContact.subscribe,
+                    "contactDelete": outlookContact.subscribe,
+                    "contactUpdate": outlookContact.subscribe
+                  };
 
 function react_to(bool, area) {
     if ((bool && !area.prevState) || area.type > 0) {
@@ -36,10 +43,6 @@ function react_to(bool, area) {
 }
 
 function checkTriggerTimers(area) {
-  if (area.userId !== '5e727ac2e696263f897645ec') {
-    console.log('skipped')
-    return;
-  }
   console.log('area token Target === ' + area.tokenTarget)
   tokenService.getByType(area.userId, area.tokenTarget)
     .then(token => {
@@ -52,13 +55,19 @@ function checkTriggerTimers(area) {
 }
 
 function intervalFunc() {
-    areaService.getAll().then(area =>{
-        area.forEach(Element => {
-            if (Element.type)
-                Element.type === 1 ? triggerArray[Element.triggerName](Element.userId) : 0;
-            else
-            Element.userId == '5e724ff9144be648824d8d1f' ? checkTriggerTimers(Element) : 0;
-        });
-    }).catch(error => console.error(error);
+  areaService.getAll()
+    .then(area =>{
+      area.forEach(Element => {
+        if (Element.type) {
+          if (Element.userId === '5e727ac2e696263f897645ec') {
+            Element.type === 1 ? triggerArray[Element.triggerName](Element) : 0;
+          }
+        }
+        else
+        Element.userId == '5e727ac2e696263f897645ec' ? checkTriggerTimers(Element) : 0;
+      });
+    })
+    .catch(error => console.error(error));
 }
-//setInterval(intervalFunc, 1500);
+
+setInterval(intervalFunc, 1500);
